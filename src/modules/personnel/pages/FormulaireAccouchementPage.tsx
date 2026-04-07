@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { PatientAccouchement } from '@/types';
+import { api } from '@/api/client';
 
 const formCardClass = 'rounded-xl border border-slate-200 bg-white p-6 shadow-card';
 const inputClass =
@@ -47,7 +47,7 @@ export function FormulaireAccouchementPage() {
     setMessage(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage(null);
 
@@ -87,7 +87,7 @@ export function FormulaireAccouchementPage() {
     const admissionIso = new Date(admissionDate).toISOString();
     const deliveryIso = new Date(deliveryDate).toISOString();
 
-    const record: Omit<PatientAccouchement, 'id'> = {
+    const record = {
       patientId: patientId.trim(),
       cin: cin.trim(),
       age: ageNum,
@@ -105,12 +105,16 @@ export function FormulaireAccouchementPage() {
       responsibleStaff: responsibleStaff.trim() || undefined,
     };
 
-    console.log('Formulaire accouchement soumis (mock):', { ...record, id: `PAT-${Date.now()}` });
-    setMessage({
-      type: 'success',
-      text: 'Accouchement enregistré (simulation). En production, les données seraient envoyées au serveur.',
-    });
-    resetForm();
+    try {
+      await api.accouchements.create(record);
+      setMessage({ type: 'success', text: 'Accouchement enregistré dans la base de données.' });
+      resetForm();
+    } catch (err) {
+      setMessage({
+        type: 'error',
+        text: err instanceof Error ? err.message : 'Erreur lors de l\'enregistrement. Vérifiez que le serveur et PostgreSQL sont démarrés.',
+      });
+    }
   };
 
   return (
@@ -349,7 +353,7 @@ export function FormulaireAccouchementPage() {
                 type="text"
                 value={responsibleStaff}
                 onChange={(e) => setResponsibleStaff(e.target.value)}
-                placeholder="ex. Sage-femme, infirmier(ère)"
+                placeholder="ex. Sage-femme, personnel"
                 className={inputClass}
               />
             </div>

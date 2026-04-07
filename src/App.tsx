@@ -1,16 +1,17 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { InfirmiereLayout } from '@/layouts/InfirmiereLayout';
 import {
+  PersonnelLayout,
   FormulaireAccouchementPage,
   GeneratedStatisticsPage,
+  GenererRapportPage,
   ImportDataPage,
   PatientsDatabasePage,
-} from '@/pages/infirmiere';
+} from '@/modules/personnel';
 import { AdminReportsProvider } from '@/context/AdminReportsContext';
 import { MOCK_GENERATED_REPORTS } from '@/data/mockReports';
 
 /**
- * Application : tout regroupé sous l'espace infirmier (pages/infirmiere).
+ * Application : tout regroupé sous l'espace personnel (modules/personnel).
  * Formulaire accouchement, statistiques, import, base patients.
  */
 function App() {
@@ -21,12 +22,13 @@ function App() {
           path="/"
           element={
             <AdminReportsProvider initialReports={MOCK_GENERATED_REPORTS}>
-              <InfirmiereLayout />
+              <PersonnelLayout />
             </AdminReportsProvider>
           }
         >
           <Route index element={<FormulaireAccouchementPage />} />
           <Route path="statistiques" element={<GeneratedStatisticsPage />} />
+          <Route path="rapport" element={<GenererRapportPage />} />
           <Route path="import" element={<ImportDataPage />} />
           <Route path="patients" element={<PatientsDatabasePage />} />
         </Route>

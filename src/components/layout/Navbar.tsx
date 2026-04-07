@@ -15,7 +15,7 @@ export function Navbar() {
           to="/"
           className="rounded-lg border border-blue-200 bg-white px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-50"
         >
-          Espace infirmier
+          Espace personnel
         </Link>
       </div>
     </header>

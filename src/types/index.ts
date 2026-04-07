@@ -76,6 +76,6 @@ export interface PatientAccouchement {
   apgar5?: number;
   /** Médecin responsable */
   responsibleDoctor?: string;
-  /** Personnel soignant responsable (sage-femme, infirmier, etc.) */
+  /** Personnel soignant responsable (sage-femme, personnel soignant, etc.) */
   responsibleStaff?: string;
 }

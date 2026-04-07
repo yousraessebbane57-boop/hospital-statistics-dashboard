@@ -87,10 +87,10 @@ export function HomePage() {
               Connexion (Tableau de bord admin)
             </a>
             <a
-              href="/infirmiere"
+              href="/personnel"
               className="inline-flex items-center justify-center rounded-lg border-2 border-primary-600 bg-white px-6 py-3 text-base font-semibold text-primary-600 transition-colors hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
             >
-              Espace infirmier — Formulaire accouchement
+              Espace personnel — Formulaire accouchement
             </a>
           </div>
         </div>

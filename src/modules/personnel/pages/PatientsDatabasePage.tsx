@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { DataTable, type DataTableColumn } from '@/components/ui/DataTable';
 import { MOCK_PATIENTS_ACCOUCHEMENT } from '@/data/mockPatients';
+import { api } from '@/api/client';
 import type { PatientAccouchement } from '@/types';
 
 const PAGE_SIZE = 5;
@@ -13,11 +14,46 @@ function formatDate(iso: string): string {
   });
 }
 
+function mapRowToPatient(row: Record<string, unknown>): PatientAccouchement {
+  return {
+    id: String(row.id),
+    patientId: String(row.patientId),
+    cin: String(row.cin),
+    age: Number(row.age),
+    deliveryType: row.deliveryType as 'normal' | 'cesarean',
+    admissionDate: String(row.admissionDate),
+    deliveryDate: String(row.deliveryDate),
+    complications: Boolean(row.complications),
+    laborDuration: row.laborDuration != null ? String(row.laborDuration) : undefined,
+    complicationsDescription: row.complicationsDescription != null ? String(row.complicationsDescription) : undefined,
+    babySex: row.babySex === 'M' || row.babySex === 'F' ? row.babySex : undefined,
+    babyWeightG: row.babyWeightG != null ? Number(row.babyWeightG) : undefined,
+    apgar1: row.apgar1 != null ? Number(row.apgar1) : undefined,
+    apgar5: row.apgar5 != null ? Number(row.apgar5) : undefined,
+    responsibleDoctor: row.responsibleDoctor != null ? String(row.responsibleDoctor) : undefined,
+    responsibleStaff: row.responsibleStaff != null ? String(row.responsibleStaff) : undefined,
+  };
+}
+
 export function PatientsDatabasePage() {
+  const [patients, setPatients] = useState<PatientAccouchement[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    api.accouchements
+      .list()
+      .then((rows: unknown[]) => {
+        if (Array.isArray(rows)) {
+          setPatients(rows.map((row) => mapRowToPatient(row as Record<string, unknown>)));
+        }
+      })
+      .catch(() => setPatients(MOCK_PATIENTS_ACCOUCHEMENT))
+      .finally(() => setLoading(false));
+  }, []);
 
   const columns: DataTableColumn<PatientAccouchement>[] = [
     { key: 'patientId', header: 'ID Patient' },
@@ -65,8 +101,10 @@ export function PatientsDatabasePage() {
     { key: 'responsibleStaff', header: 'Personnel', render: (row) => row.responsibleStaff ?? '—' },
   ];
 
+  const listToUse = patients.length > 0 ? patients : MOCK_PATIENTS_ACCOUCHEMENT;
+
   const filteredAndPaginated = useMemo(() => {
-    let list = [...MOCK_PATIENTS_ACCOUCHEMENT];
+    let list = [...listToUse];
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       list = list.filter(
@@ -84,7 +122,7 @@ export function PatientsDatabasePage() {
     const total = list.length;
     const start = (page - 1) * PAGE_SIZE;
     return { pageData: list.slice(start, start + PAGE_SIZE), total };
-  }, [search, dateFrom, dateTo, page]);
+  }, [listToUse, search, dateFrom, dateTo, page]);
 
   const totalPages = Math.ceil(filteredAndPaginated.total / PAGE_SIZE) || 1;
 
@@ -93,8 +131,9 @@ export function PatientsDatabasePage() {
       <div>
         <h2 className="text-2xl font-bold text-slate-800">Base patients — Accouchement</h2>
         <p className="mt-1 text-slate-600">
-          Liste des dossiers accouchement. Recherche, filtre par date et pagination.
+          Liste des dossiers accouchement (base PostgreSQL). Recherche, filtre par date et pagination.
         </p>
+        {loading && <p className="text-sm text-slate-500">Chargement…</p>}
       </div>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex flex-wrap items-end gap-3">

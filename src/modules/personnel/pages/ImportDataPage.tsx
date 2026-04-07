@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAdminReports } from '@/context/AdminReportsContext';
+import { api } from '@/api/client';
 import type { GeneratedReport, ReportDataType } from '@/types';
 
 const ALLOWED_EXTENSIONS = ['.csv', '.xlsx'];
@@ -28,21 +29,6 @@ function validateFile(file: File): string | null {
  * Mock parsing: simulates reading rows and inferring data type from filename or content.
  * In production this would use a real CSV/Excel parser (e.g. papaparse, xlsx).
  */
-function mockParseFile(file: File): Promise<{ dataType: ReportDataType; rowCount: number }> {
-  return new Promise((resolve) => {
-    // Simulate async read
-    setTimeout(() => {
-      const name = file.name.toLowerCase();
-      let dataType: ReportDataType = 'Autre';
-      if (name.includes('accouchement') || name.includes('naissance')) dataType = 'Accouchement';
-      else if (name.includes('hospitalisation') || name.includes('hospi')) dataType = 'Hospitalisation';
-      else if (name.includes('urgence')) dataType = 'Urgences';
-      // Mock row count (e.g. from first sheet or line count)
-      const rowCount = Math.min(500, Math.max(50, Math.floor(file.size / 100)));
-      resolve({ dataType, rowCount });
-    }, 800);
-  });
-}
 
 /**
  * Builds a generated report from parsed mock data (stats + charts + text).
@@ -132,16 +118,21 @@ export function ImportDataPage() {
 
     setStatus('parsing');
     try {
-      const { dataType, rowCount } = await mockParseFile(file);
-      const report = buildReportFromParsedData(dataType, rowCount, file.name);
-      addReport(report);
+      const result = await api.accouchements.importFile(file);
+      const count = result.count ?? 0;
+      const report = buildReportFromParsedData('Accouchement', count, file.name);
+      report.summaryStats = [
+        { label: 'Lignes importées', value: count },
+        { label: 'Total lignes fichier', value: result.total ?? count },
+        { label: 'Date d\'import', value: new Date().toLocaleDateString('fr-FR') },
+      ];
+      await addReport(report);
       setStatus('success');
       setFile(null);
       if (inputRef.current) inputRef.current.value = '';
-      // Optional: redirect to Generated Statistics after short delay
-      setTimeout(() => navigate('/statistiques'), 1500);
+      setTimeout(() => navigate('/patients'), 1500);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors de l\'import.');
+      setError(err instanceof Error ? err.message : 'Erreur lors de l\'import. Vérifiez le format (CSV : séparateur ;).');
       setStatus('error');
     }
   };
@@ -153,8 +144,8 @@ export function ImportDataPage() {
       <div>
         <h2 className="text-2xl font-bold text-slate-800">Importer des données</h2>
         <p className="mt-1 text-slate-600">
-          Importez un fichier CSV ou Excel. Les statistiques et graphiques seront générés automatiquement
-          et le rapport sera ajouté à la page « Statistiques générées ».
+          Importez un fichier CSV (séparateur ;) ou Excel. Les lignes sont enregistrées dans la base de données
+          et affichées dans « Base patients ». Un rapport est aussi ajouté à « Statistiques générées ».
         </p>
       </div>
 
@@ -191,8 +182,8 @@ export function ImportDataPage() {
           </p>
         )}
         {status === 'success' && (
-          <p className="mt-2 text-sm text-teal-600" role="status">
-            Import réussi. Rapport généré et ajouté aux statistiques. Redirection…
+          <p className="mt-2 text-sm text-green-600" role="status">
+            Import réussi. Données enregistrées en base. Redirection vers Base patients…
           </p>
         )}
       </div>

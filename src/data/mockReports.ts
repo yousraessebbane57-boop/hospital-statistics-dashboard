@@ -9,8 +9,11 @@ export const MOCK_GENERATED_REPORTS: GeneratedReport[] = [
     title: 'Rapport Accouchements - Janvier 2025',
     summaryStats: [
       { label: 'Total accouchements', value: 156 },
-      { label: 'Césariennes', value: 38, unit: '%' },
+      { label: 'Taux de césarienne', value: 38, unit: '%' },
       { label: 'Avec complications', value: 12 },
+      { label: 'Voie basse', value: 97 },
+      { label: 'Poids moyen (g)', value: 3450 },
+      { label: 'Taux de complications', value: 7.7, unit: '%' },
     ],
     charts: [
       {
@@ -31,8 +34,49 @@ export const MOCK_GENERATED_REPORTS: GeneratedReport[] = [
           { name: 'Césarienne', value: 59 },
         ],
       },
+      {
+        type: 'pie',
+        title: 'Répartition par sexe',
+        data: [
+          { name: 'Garçons', value: 79 },
+          { name: 'Filles', value: 77 },
+        ],
+      },
+      {
+        type: 'bar',
+        title: 'Complications par type',
+        data: [
+          { name: 'Hémorragie', count: 4, fill: '#dc2626' },
+          { name: 'Infection', count: 3, fill: '#f59e0b' },
+          { name: 'Autres', count: 5, fill: '#3b82f6' },
+        ],
+      },
     ],
-    textReport: 'Rapport statistique Accouchements - Janvier 2025. Total: 156. Taux césarienne: 38%.',
+    textReport: `RAPPORT STATISTIQUE ACCOUCHEMENTS - JANVIER 2025
+
+Service de Maternité - Centre Hospitalier
+
+PÉRIODE: Janvier 2025 (31 jours)
+DATE DE GÉNÉRATION: 20 février 2025
+
+RÉSUMÉ EXÉCUTIF:
+Durant le mois de janvier 2025, 156 accouchements ont été enregistrés au service de maternité. Le taux de césarienne s'élève à 38% (59 cas), tandis que 97 accouchements se sont déroulés par voie basse. 12 cas ont présenté des complications, soit un taux de 7.7%.
+
+ANALYSE DES DONNÉES:
+• Activité: Régulière avec une moyenne de 39.1 accouchements par semaine
+• Poids moyen des nouveau-nés: 3450 grammes
+• Distribution garçons/filles: 79 garçons, 77 filles
+• Complications principales: Hémorragie (4 cas), Infections (3 cas), Autres (5 cas)
+
+INDICATEURS CLÉS:
+✓ Taux de césarienne: 38% (normal: 20-30%)
+✓ Taux de complications: 7.7% (acceptable)
+✓ Poids moyen: 3450g (normal: 3000-4000g)
+
+RECOMMANDATIONS:
+- Suivi du taux de césarienne légèrement élevé
+- Renforcer les protocoles de prévention infections
+- Maintenir les bonnes pratiques actuelles`,
   },
   {
     id: 'rpt-002',
@@ -43,6 +87,7 @@ export const MOCK_GENERATED_REPORTS: GeneratedReport[] = [
       { label: 'Entrées', value: 247 },
       { label: 'Sorties', value: 251 },
       { label: 'Occupation moyenne', value: 82, unit: '%' },
+      { label: 'Moyenne séjour', value: '5.2', unit: 'j' },
     ],
     charts: [
       {
@@ -54,8 +99,21 @@ export const MOCK_GENERATED_REPORTS: GeneratedReport[] = [
           { name: 'Urgences', count: 94, fill: '#0ea5e9' },
         ],
       },
+      {
+        type: 'line',
+        title: 'Taux occupation par jour',
+        data: [
+          { month: 'Lun', value: 78 },
+          { month: 'Mar', value: 80 },
+          { month: 'Mer', value: 82 },
+          { month: 'Jeu', value: 84 },
+          { month: 'Ven', value: 86 },
+          { month: 'Sam', value: 83 },
+          { month: 'Dim', value: 81 },
+        ],
+      },
     ],
-    textReport: 'Rapport Hospitalisation - Semaine 07. Entrées: 247, Sorties: 251.',
+    textReport: 'Rapport Hospitalisation - Semaine 07. Entrées: 247, Sorties: 251. Taux d\'occupation: 82%.',
   },
   {
     id: 'rpt-003',
@@ -65,7 +123,8 @@ export const MOCK_GENERATED_REPORTS: GeneratedReport[] = [
     summaryStats: [
       { label: 'Passages', value: 1203 },
       { label: 'Hospitalisations', value: 186 },
-      { label: 'Délai moyen', value: '42 min' },
+      { label: 'Taux tri', value: 'P1: 12%', unit: '' },
+      { label: 'Délai moyen', value: '42', unit: 'min' },
     ],
     charts: [
       {
@@ -81,7 +140,16 @@ export const MOCK_GENERATED_REPORTS: GeneratedReport[] = [
           { month: 'Dim', value: 154 },
         ],
       },
+      {
+        type: 'pie',
+        title: 'Motifs de consultation',
+        data: [
+          { name: 'Traumatismes', value: 287 },
+          { name: 'Infections', value: 356 },
+          { name: 'Autres', value: 560 },
+        ],
+      },
     ],
-    textReport: 'Rapport Urgences - Février 2025. Total passages: 1203.',
+    textReport: 'Rapport Urgences - Février 2025. Total passages: 1203. Hospitalisations: 186 (15.5%).',
   },
 ];
