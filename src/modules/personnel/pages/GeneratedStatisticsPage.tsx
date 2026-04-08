@@ -15,7 +15,6 @@ import {
   Legend,
 } from 'recharts';
 import { jsPDF } from 'jspdf';
-import * as XLSX from 'xlsx';
 import { ChartCard } from '@/components/ui/ChartCard';
 import { StatCard } from '@/components/ui/StatCard';
 import { useAdminReports } from '@/context/AdminReportsContext';
@@ -62,9 +61,18 @@ async function handleDownloadPdf(report: GeneratedReport) {
 
     pdf.setTextColor(128, 128, 128);
     pdf.setFontSize(9);
-    pdf.text(`Généré le ${formatReportDate(report.generatedAt)}`, pageWidth - margin - 50, 12);
+    const generatedDate = formatReportDate(report.generatedAt);
+    pdf.text(`Rapport généré le: ${generatedDate}`, pageWidth - margin - 70, 12);
 
     yPosition = 40;
+
+    // Add report date and type info
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(100, 100, 100);
+    pdf.text(`Date du rapport: ${generatedDate}`, margin, yPosition);
+    pdf.text(`Type: ${report.dataType}`, margin + 80, yPosition);
+    yPosition += 8;
 
     // ========== TITRE ==========
     pdf.setTextColor(0, 0, 0);
@@ -302,63 +310,6 @@ async function handleDownloadPdf(report: GeneratedReport) {
 }
 
 /** Export report to Excel */
-function handleExportExcel(report: GeneratedReport) {
-  try {
-    // Create workbook
-    const wb = XLSX.utils.book_new();
-
-    // Sheet 1: Summary Stats
-    const statsData = [
-      ['Résumé Statistique'],
-      [''],
-      ['Métrique', 'Valeur'],
-      ...report.summaryStats.map(stat => [stat.label, `${stat.value}${stat.unit ?? ''}`]),
-    ];
-    const ws1 = XLSX.utils.aoa_to_sheet(statsData);
-    ws1['!cols'] = [{ wch: 30 }, { wch: 20 }];
-    XLSX.utils.book_append_sheet(wb, ws1, 'Résumé');
-
-    // Sheet 2: Charts Data
-    if (report.charts && report.charts.length > 0) {
-      report.charts.forEach((chart, idx) => {
-        const chartData = [
-          [chart.title],
-          [''],
-          ...((chart.data as any[]).map(item => {
-            if ('month' in item) {
-              return [item.month, item.value];
-            } else if ('name' in item && 'value' in item) {
-              return [item.name, item.value];
-            } else if ('name' in item && 'count' in item) {
-              return [item.name, item.count];
-            }
-            return Object.values(item);
-          })),
-        ];
-        const ws = XLSX.utils.aoa_to_sheet(chartData);
-        ws['!cols'] = [{ wch: 30 }, { wch: 15 }];
-        XLSX.utils.book_append_sheet(wb, ws, `Graphique ${idx + 1}`);
-      });
-    }
-
-    // Sheet 3: Full Report
-    if (report.textReport) {
-      const reportLines = report.textReport.split('\n').map(line => [line]);
-      const ws3 = XLSX.utils.aoa_to_sheet(reportLines);
-      ws3['!cols'] = [{ wch: 100 }];
-      XLSX.utils.book_append_sheet(wb, ws3, 'Rapport Complet');
-    }
-
-    // Generate filename
-    const timestamp = new Date().toISOString().slice(0, 10);
-    const filename = `rapport_${report.dataType}_${timestamp}.xlsx`;
-
-    XLSX.writeFile(wb, filename);
-  } catch (error) {
-    console.error('Erreur lors de l\'export Excel:', error);
-    alert('Erreur lors de l\'export Excel. Vérifiez la console pour plus de détails.');
-  }
-}
 
 /** Print report */
 function handlePrintReport(report: GeneratedReport) {
@@ -562,7 +513,7 @@ function ReportChart({ chart }: { chart: ReportChartData }) {
 /** Detail view for a single report (charts + stats) */
 function ReportDetailView({ report, onClose }: { report: GeneratedReport; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 p-4" aria-modal="true">
+    <div className="fixed bottom-0 left-0 right-0 top-24 z-50 overflow-y-auto bg-slate-900/50 p-4" aria-modal="true">
       <div className="mx-auto max-w-6xl rounded-xl bg-white p-6 shadow-xl">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -577,21 +528,14 @@ function ReportDetailView({ report, onClose }: { report: GeneratedReport; onClos
               className="rounded-lg bg-teal-600 px-3 py-2 text-sm font-medium text-white hover:bg-teal-700"
               onClick={() => handleDownloadPdf(report)}
             >
-              📥 Télécharger PDF
-            </button>
-            <button
-              type="button"
-              className="rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700"
-              onClick={() => handleExportExcel(report)}
-            >
-              📊 Export Excel
+              Télécharger PDF
             </button>
             <button
               type="button"
               className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
               onClick={() => handlePrintReport(report)}
             >
-              🖨️ Imprimer
+              Imprimer
             </button>
             <button
               type="button"
@@ -658,28 +602,21 @@ function ReportCard({
             className="rounded-lg bg-teal-600 px-3 py-2 text-sm font-medium text-white hover:bg-teal-700"
             onClick={onViewDetails}
           >
-            👁️ Voir détail
+            Voir détail
           </button>
           <button
             type="button"
             className="rounded-lg bg-teal-600 px-3 py-2 text-sm font-medium text-white hover:bg-teal-700"
             onClick={onDownloadPdf}
           >
-            📥 PDF
-          </button>
-          <button
-            type="button"
-            className="rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700"
-            onClick={() => handleExportExcel(report)}
-          >
-            📊 Excel
+            PDF
           </button>
           <button
             type="button"
             className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
             onClick={() => handlePrintReport(report)}
           >
-            🖨️ Imprimer
+            Imprimer
           </button>
         </div>
       </div>

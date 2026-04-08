@@ -2,7 +2,8 @@ import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAdminReports } from '@/context/AdminReportsContext';
 import { api } from '@/api/client';
-import type { GeneratedReport, ReportDataType } from '@/types';
+import { generateCompleteReport } from '@/utils/reportGenerator';
+import type { GeneratedReport } from '@/types';
 
 const ALLOWED_EXTENSIONS = ['.csv', '.xlsx'];
 const MAX_FILE_SIZE_MB = 10;
@@ -31,58 +32,20 @@ function validateFile(file: File): string | null {
  */
 
 /**
- * Builds a generated report from parsed mock data (stats + charts + text).
- * In production, stats and charts would be computed from actual parsed rows.
+ * Builds a generated report from imported data using generateCompleteReport.
+ * Fetches all accouchements to generate accurate stats and charts.
  */
-function buildReportFromParsedData(
-  dataType: ReportDataType,
-  rowCount: number,
+async function buildReportFromImportedData(
   fileName: string
-): GeneratedReport {
-  const now = new Date().toISOString();
-  const id = `rpt-${Date.now()}`;
-  const title = `Rapport import — ${dataType} (${fileName})`;
-
-  const summaryStats = [
-    { label: 'Lignes importées', value: rowCount },
-    { label: 'Type de données', value: dataType },
-    { label: 'Date d\'import', value: new Date(now).toLocaleDateString('fr-FR') },
-  ];
-
-  // Mock chart data based on data type
-  const charts = [
-    {
-      type: 'line' as const,
-      title: 'Répartition simulée (par période)',
-      data: [
-        { month: 'P1', value: Math.floor(rowCount * 0.25), deliveries: Math.floor(rowCount * 0.25) },
-        { month: 'P2', value: Math.floor(rowCount * 0.3), deliveries: Math.floor(rowCount * 0.3) },
-        { month: 'P3', value: Math.floor(rowCount * 0.22), deliveries: Math.floor(rowCount * 0.22) },
-        { month: 'P4', value: rowCount - Math.floor(rowCount * 0.77), deliveries: rowCount - Math.floor(rowCount * 0.77) },
-      ],
-    },
-    {
-      type: 'pie' as const,
-      title: 'Répartition par catégorie (simulée)',
-      data: [
-        { name: 'Catégorie A', value: Math.floor(rowCount * 0.5) },
-        { name: 'Catégorie B', value: Math.floor(rowCount * 0.3) },
-        { name: 'Catégorie C', value: rowCount - Math.floor(rowCount * 0.8) },
-      ],
-    },
-  ];
-
-  const textReport = `Rapport généré automatiquement à partir de l'import "${fileName}". Type: ${dataType}. Lignes traitées: ${rowCount}. Date: ${now}.`;
-
-  return {
-    id,
-    generatedAt: now,
-    dataType,
-    title,
-    summaryStats,
-    charts,
-    textReport,
-  };
+): Promise<GeneratedReport> {
+  // Fetch all accouchements (no date filter)
+  const rows = await api.accouchements.list();
+  const list = Array.isArray(rows) ? rows : [];
+  
+  // Generate actual report with real data
+  const report = generateCompleteReport(list, `Import — ${fileName.replace(/\.[^/.]+$/, '')}`);
+  
+  return report;
 }
 
 export function ImportDataPage() {
@@ -118,15 +81,12 @@ export function ImportDataPage() {
 
     setStatus('parsing');
     try {
-      const result = await api.accouchements.importFile(file);
-      const count = result.count ?? 0;
-      const report = buildReportFromParsedData('Accouchement', count, file.name);
-      report.summaryStats = [
-        { label: 'Lignes importées', value: count },
-        { label: 'Total lignes fichier', value: result.total ?? count },
-        { label: 'Date d\'import', value: new Date().toLocaleDateString('fr-FR') },
-      ];
+      await api.accouchements.importFile(file);
+      
+      // Generate report with real imported data
+      const report = await buildReportFromImportedData(file.name);
       await addReport(report);
+      
       setStatus('success');
       setFile(null);
       if (inputRef.current) inputRef.current.value = '';
@@ -190,8 +150,8 @@ export function ImportDataPage() {
 
       <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
         <strong className="text-slate-700">Validation :</strong> seuls les fichiers .csv et .xlsx
-        sont acceptés, taille max {MAX_FILE_SIZE_MB} Mo. Le parsing et la génération des statistiques
-        sont simulés (pas de backend).
+        sont acceptés, taille max {MAX_FILE_SIZE_MB} Mo. Les données seront enregistrées en base et
+        un rapport complet avec statistiques et graphiques sera généré automatiquement.
       </div>
     </div>
   );
