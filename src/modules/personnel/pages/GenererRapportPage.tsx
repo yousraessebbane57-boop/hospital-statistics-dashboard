@@ -1,21 +1,8 @@
-import { useState, useRef, useEffect } from 'react';
-import {
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-  Legend,
-} from 'recharts';
-import { ChartCard } from '@/components/ui/ChartCard';
+import { useState } from 'react';
 import { StatCard } from '@/components/ui/StatCard';
 import { api } from '@/api/client';
 import { useAdminReports } from '@/context/AdminReportsContext';
+import { generateCompleteReport } from '@/utils/reportGenerator';
 import type { GeneratedReport } from '@/types';
 
 type PeriodType = 'annuelle' | 'mensuelle' | 'personnalisee';
@@ -43,31 +30,15 @@ function getDateRange(period: PeriodType, year: string, month: string, dateFrom:
 
 export function GenererRapportPage() {
   const { addReport } = useAdminReports();
-  const [period, setPeriod] = useState<PeriodType>('annuelle');
+  const [period, setPeriod] = useState<PeriodType>('mensuelle');
   const [year, setYear] = useState(() => String(new Date().getFullYear()));
-  const [month, setMonth] = useState('1');
+  const [month, setMonth] = useState('2');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const pendingReportRef = useRef<(GeneratedReport & { source?: string }) | null>(null);
-  const [data, setData] = useState<{
-    total: number;
-    byType: { name: string; value: number; fill?: string }[];
-    byMonth: { month: string; count: number }[];
-    complications: number;
-    reportText: string;
-    periodLabel: string;
-  } | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (pendingReportRef.current) {
-        addReport(pendingReportRef.current);
-        pendingReportRef.current = null;
-      }
-    };
-  }, [addReport]);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [generatedReport, setGeneratedReport] = useState<GeneratedReport | null>(null);
 
   const handleGenerate = async () => {
     const range = getDateRange(period, year, month, dateFrom, dateTo);
@@ -76,80 +47,48 @@ export function GenererRapportPage() {
       return;
     }
     setError(null);
+    setSuccess(null);
     setLoading(true);
-    setData(null);
+    setGeneratedReport(null);
+    
     try {
+      // Fetch data from API
       const rows = await api.accouchements.list({ dateFrom: range.from, dateTo: range.to });
       const list = Array.isArray(rows) ? rows : [];
 
-      const total = list.length;
-      const normal = list.filter((r: { deliveryType?: string }) => r.deliveryType === 'normal').length;
-      const cesarean = list.filter((r: { deliveryType?: string }) => r.deliveryType === 'cesarean').length;
-      const complications = list.filter((r: { complications?: boolean }) => r.complications).length;
+      if (list.length === 0) {
+        setError('Aucune donnée trouvée pour cette période.');
+        setLoading(false);
+        return;
+      }
 
-      const byMonth: Record<string, number> = {};
-      MONTHS.forEach((_, i) => { byMonth[i] = 0; });
-      list.forEach((r: { deliveryDate?: string }) => {
-        if (r.deliveryDate) {
-          const d = new Date(r.deliveryDate);
-          const m = d.getMonth();
-          byMonth[m] = (byMonth[m] ?? 0) + 1;
-        }
-      });
-      const byMonthChart = MONTHS.map((label, i) => ({ month: label, count: byMonth[i] ?? 0 }));
-
+      // Generate complete report
       let periodLabel = '';
       if (period === 'annuelle') periodLabel = `Année ${year}`;
       else if (period === 'mensuelle') periodLabel = `${MONTHS[parseInt(month, 10) - 1]} ${year}`;
       else periodLabel = `Du ${range.from} au ${range.to}`;
 
-      const reportText = `Rapport statistique — ${periodLabel}\n\n` +
-        `Total accouchements : ${total}\n` +
-        `Voie basse : ${normal} (${total ? ((normal / total) * 100).toFixed(1) : 0} %)\n` +
-        `Césariennes : ${cesarean} (${total ? ((cesarean / total) * 100).toFixed(1) : 0} %)\n` +
-        `Avec complications : ${complications}\n\n` +
-        `Période : ${range.from} — ${range.to}.`;
+      const report = generateCompleteReport(list, periodLabel);
 
-      setData({
-        total,
-        byType: [
-          { name: 'Voie basse', value: normal, fill: '#0d9488' },
-          { name: 'Césarienne', value: cesarean, fill: '#0284c7' },
-        ],
-        byMonth: byMonthChart,
-        complications,
-        reportText,
-        periodLabel,
-      });
+      // Save report to database via API
+      try {
+        await api.rapports.create({
+          generated_at: report.generatedAt,
+          data_type: report.dataType,
+          title: report.title,
+          summary_stats: report.summaryStats,
+          charts: report.charts,
+          text_report: report.textReport,
+        });
+      } catch (apiError) {
+        console.error('Erreur lors de la sauvegarde du rapport:', apiError);
+        // Continue anyway - display locally
+      }
 
-      pendingReportRef.current = {
-        id: `gen-${Date.now()}`,
-        generatedAt: new Date().toISOString(),
-        dataType: 'Accouchement',
-        title: `Rapport accouchements — ${periodLabel}`,
-        summaryStats: [
-          { label: 'Total accouchements', value: total },
-          { label: 'Avec complications', value: complications },
-          { label: 'Période', value: periodLabel },
-        ],
-        charts: [
-          {
-            type: 'pie',
-            title: "Répartition par type d'accouchement",
-            data: [
-              { name: 'Voie basse', value: normal },
-              { name: 'Césarienne', value: cesarean },
-            ],
-          },
-          {
-            type: 'line',
-            title: 'Accouchements par mois',
-            data: byMonthChart.map((m) => ({ month: m.month, value: m.count })),
-          },
-        ],
-        textReport: reportText,
-        source: 'generation',
-      };
+      // Add to context for immediate display
+      addReport(report);
+      setGeneratedReport(report);
+      setSuccess(`Rapport généré et sauvegardé avec succès!`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors du chargement des données.');
     } finally {
@@ -267,6 +206,7 @@ export function GenererRapportPage() {
           )}
 
           {error && <p className="text-sm text-red-600" role="alert">{error}</p>}
+          {success && <p className="text-sm text-green-600" role="status">{success}</p>}
 
           <button
             type="button"
@@ -279,57 +219,24 @@ export function GenererRapportPage() {
         </div>
       </div>
 
-      {data && (
+      {generatedReport && (
         <>
           <p className="rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-800">
-            Ce rapport sera enregistré dans « Statistiques générées » lorsque vous quitterez cette page.
+            ✓ Rapport généré et enregistré! Voir les détails dans « Statistiques générées ».
           </p>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <StatCard data={{ label: 'Total accouchements', value: data.total }} />
-            <StatCard data={{ label: 'Avec complications', value: data.complications }} />
-            <StatCard data={{ label: 'Période', value: data.periodLabel }} />
-          </div>
-
-          <div className="grid gap-6 lg:grid-cols-2">
-            <ChartCard title="Répartition par type d'accouchement">
-              <ResponsiveContainer width="100%" height={240}>
-                <PieChart>
-                  <Pie
-                    data={data.byType}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    label={({ name, value }) => `${name}: ${value}`}
-                  >
-                    {data.byType.map((_, i) => (
-                      <Cell key={i} fill={data.byType[i].fill ?? '#0d9488'} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </ChartCard>
-            <ChartCard title="Accouchements par mois (période)">
-              <ResponsiveContainer width="100%" height={240}>
-                <BarChart data={data.byMonth} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Bar dataKey="count" name="Accouchements" fill="#0d9488" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartCard>
-          </div>
-
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
-            <h3 className="mb-3 text-base font-semibold text-slate-800">Rapport textuel</h3>
-            <pre className="whitespace-pre-wrap rounded-lg bg-slate-50 p-4 text-sm text-slate-700 font-sans">
-              {data.reportText}
-            </pre>
+          <div>
+            <h3 className="text-lg font-semibold text-slate-800 mb-4">{generatedReport.title}</h3>
+            <div className="grid gap-4 sm:grid-cols-3">
+              {generatedReport.summaryStats.slice(0, 3).map((stat) => (
+                <StatCard key={stat.label} data={{
+                  label: stat.label,
+                  value: `${stat.value}${stat.unit ?? ''}`
+                }} />
+              ))}
+            </div>
+            <div className="mt-6 text-sm text-slate-600">
+              <p>Pour voir le rapport complet avec tous les graphiques et l'analyse détaillée, allez à « Statistiques générées ».</p>
+            </div>
           </div>
         </>
       )}
