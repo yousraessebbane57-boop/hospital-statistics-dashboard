@@ -1,0 +1,16 @@
+patientId;cin;age;admissionDate;deliveryDate;deliveryType;laborDuration;complications;complicationsDescription;babySex;babyWeightG;apgar1;apgar5;responsibleDoctor;responsibleStaff
+PAT-2025-001;AB123456;28;2025-02-01 08:00;2025-02-01 14:32;normal;6h30;non;;M;3250;8;9;Dr. Amine Bennani;Sage-femme Leila M.
+PAT-2025-002;AB123457;34;2025-02-01 10:15;2025-02-01 12:45;cesarean;;non;;F;2980;9;10;Dr. Sara Idrissi;Inf. Karim T.
+PAT-2025-003;AB123458;22;2025-02-02 02:20;2025-02-02 06:10;normal;3h50;oui;Hémorragie légère contrôlée;F;3100;7;9;Dr. Amine Bennani;Sage-femme Leila M.
+PAT-2025-004;AB123459;31;2025-02-02 14:00;2025-02-02 22:15;normal;8h15;non;;M;3520;9;10;Dr. Sara Idrissi;Sage-femme Nadia K.
+PAT-2025-005;AB123460;29;2025-02-03 07:30;2025-02-03 09:00;cesarean;;non;;F;2850;8;9;Dr. Amine Bennani;Inf. Karim T.
+PAT-2025-006;AB123461;26;2025-02-03 18:45;2025-02-04 01:20;normal;6h35;non;;M;3380;9;10;Dr. Sara Idrissi;Sage-femme Leila M.
+PAT-2025-007;AB123462;38;2025-02-04 09:00;2025-02-04 10:30;cesarean;;oui;RCIU;F;2650;7;8;Dr. Amine Bennani;Inf. Karim T.
+PAT-2025-008;AB123463;24;2025-02-05 11:00;2025-02-05 16:45;normal;5h45;non;;F;3020;8;9;Dr. Sara Idrissi;Sage-femme Nadia K.
+PAT-2025-009;AB123464;33;2025-02-06 03:00;2025-02-06 08:30;normal;5h30;non;;M;3450;9;10;Dr. Amine Bennani;Sage-femme Leila M.
+PAT-2025-010;AB123465;27;2025-02-06 14:20;2025-02-06 15:50;cesarean;;non;;M;3120;8;9;Dr. Sara Idrissi;Inf. Karim T.
+PAT-2025-011;AB123466;30;2025-02-07 20:00;2025-02-08 02:15;normal;6h15;non;;F;3280;9;10;Dr. Amine Bennani;Sage-femme Nadia K.
+PAT-2025-012;AB123467;25;2025-02-08 08:30;2025-02-08 12:00;normal;3h30;oui;Épisode d'asphyxie récupéré;M;2950;6;8;Dr. Sara Idrissi;Sage-femme Leila M.
+PAT-2025-013;AB123468;35;2025-02-09 06:00;2025-02-09 07:45;cesarean;;non;;F;2780;8;9;Dr. Amine Bennani;Inf. Karim T.
+PAT-2025-014;AB123469;23;2025-02-10 15:00;2025-02-10 19:30;normal;4h30;non;;M;3310;9;10;Dr. Sara Idrissi;Sage-femme Leila M.
+PAT-2025-015;AB123470;32;2025-02-11 01:00;2025-02-11 05:20;normal;4h20;non;;F;3190;8;9;Dr. Amine Bennani;Sage-femme Nadia K.
