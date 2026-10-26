@@ -7,3 +7,12 @@
     @apply antialiased text-slate-800;
   }
 }
+
+@media print {
+  .print\:hidden,
+  .no-print,
+  aside,
+  header {
+    display: none !important;
+  }
+}
