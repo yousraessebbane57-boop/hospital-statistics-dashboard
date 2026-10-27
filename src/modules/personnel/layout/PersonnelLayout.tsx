@@ -1,15 +1,24 @@
-import { Outlet, NavLink } from 'react-router-dom';
+import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom';
+import { useAdminAuth } from '@/context/AdminAuthContext';
 
 /** Sidebar pour l'espace personnel : formulaire, statistiques, import, base patients */
 const NAV_ITEMS = [
-  { to: '/', end: true, label: 'Formulaire accouchement' },
-  { to: '/statistiques', end: false, label: 'Statistiques générées' },
-  { to: '/rapport', end: false, label: 'Générer rapport et diagramme' },
-  { to: '/import', end: false, label: 'Importer des données' },
-  { to: '/patients', end: false, label: 'Base patients' },
+  { to: '/personnel', end: true, label: 'Formulaire accouchement' },
+  { to: '/personnel/statistiques', end: false, label: 'Statistiques générées' },
+  { to: '/personnel/rapport', end: false, label: 'Générer rapport et diagramme' },
+  { to: '/personnel/import', end: false, label: 'Importer des données' },
+  { to: '/personnel/patients', end: false, label: 'Base patients' },
 ] as const;
 
 export function PersonnelLayout() {
+  const { user, logout } = useAdminAuth();
+  const navigate = useNavigate();
+
+  async function signOut() {
+    await logout();
+    navigate('/', { replace: true });
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
       <div className="bg-green-600 px-4 py-2.5 text-center text-sm font-medium text-white">
@@ -19,6 +28,14 @@ export function PersonnelLayout() {
         <h1 className="text-lg font-semibold text-slate-800">
           Tableau de bord personnel — Statistiques hospitalières
         </h1>
+        {user?.role !== 'PERSONNEL' && (
+          <Link to="/admin" className="ml-auto rounded-lg border border-green-200 px-3 py-1.5 text-sm font-medium text-green-700 hover:bg-green-50">
+            Espace admin
+          </Link>
+        )}
+        <button onClick={() => void signOut()} className="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-green-700">
+          Déconnexion
+        </button>
       </header>
       <div className="flex flex-1 overflow-hidden">
         <aside className="flex w-56 flex-col border-r border-slate-200 bg-white">

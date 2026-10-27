@@ -15,9 +15,9 @@ export function FeatureCard({
 }: FeatureCardProps) {
   return (
     <div
-      className={`rounded-xl bg-white p-6 shadow-card border border-slate-100 transition-all hover:shadow-soft hover:border-primary-100 ${className}`}
+      className={`rounded-xl bg-white p-6 shadow-card border border-slate-100 transition-all hover:shadow-soft hover:border-green-100 ${className}`}
     >
-      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary-50 text-primary-600">
+      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-green-50 text-green-700">
         {icon}
       </div>
       <h3 className="mt-4 text-lg font-semibold text-slate-800">{title}</h3>

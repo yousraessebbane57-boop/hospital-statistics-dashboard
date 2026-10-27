@@ -2,12 +2,13 @@
  * Client API pour le backend (PostgreSQL via Express).
  * Base URL : VITE_API_URL ou http://localhost:3001
  */
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const BASE_URL = import.meta.env.VITE_API_URL || '';
 
 async function fetchApi(path: string, options: RequestInit = {}) {
   const url = `${BASE_URL}${path}`;
   const res = await fetch(url, {
     ...options,
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       ...options.headers,
@@ -37,7 +38,7 @@ export const api = {
       const formData = new FormData();
       formData.append('file', file);
       const url = `${BASE_URL}/api/accouchements/import`;
-      const res = await fetch(url, { method: 'POST', body: formData });
+      const res = await fetch(url, { method: 'POST', body: formData, credentials: 'include' });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: res.statusText }));
         throw new Error(err.error || res.statusText);
