@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  PERSONNEL
+  ADMIN
+  SUPER_ADMIN
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String   @db.VarChar(160)
+  email        String   @unique @db.VarChar(254)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  role         UserRole @default(PERSONNEL)
+  specialty    String?  @db.VarChar(160)
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([role, isActive])
+  @@map("users")
+}
+
+model Accouchement {
+  id                       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  patientId                String    @map("patient_id") @db.VarChar(50)
+  cin                      String    @db.VarChar(30)
+  age                      Int
+  deliveryType             String    @map("delivery_type") @db.VarChar(20)
+  admissionDate            DateTime  @map("admission_date") @db.Timestamptz(6)
+  deliveryDate             DateTime  @map("delivery_date") @db.Timestamptz(6)
+  laborDuration            String?   @map("labor_duration") @db.VarChar(50)
+  complications            Boolean   @default(false)
+  complicationsDescription String?   @map("complications_description")
+  babySex                  String?   @map("baby_sex") @db.Char(1)
+  babyWeightG              Int?      @map("baby_weight_g")
+  apgar1                   Int?      @map("apgar_1") @db.SmallInt
+  apgar5                   Int?      @map("apgar_5") @db.SmallInt
+  responsibleDoctor        String?   @map("responsible_doctor") @db.VarChar(200)
+  responsibleStaff         String?   @map("responsible_staff") @db.VarChar(200)
+  createdAt                DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([patientId])
+  @@index([cin])
+  @@index([deliveryDate])
+  @@map("accouchements")
+}
