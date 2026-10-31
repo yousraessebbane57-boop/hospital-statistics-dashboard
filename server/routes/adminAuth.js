@@ -20,6 +20,10 @@ router.post('/login', async (req, res) => {
 
   const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
   const password = typeof req.body?.password === 'string' ? req.body.password : '';
+  const requestedRole = req.body?.accessRole;
+  if (requestedRole !== 'admin' && requestedRole !== 'personnel') {
+    return res.status(400).json({ error: 'Type de connexion invalide.' });
+  }
   if (!email || !password) {
     return res.status(400).json({ error: 'Adresse e-mail et mot de passe obligatoires.' });
   }
@@ -29,6 +33,16 @@ router.post('/login', async (req, res) => {
     const passwordMatches = user ? await bcrypt.compare(password, user.passwordHash) : false;
     if (!user || !passwordMatches || !user.isActive) {
       return res.status(401).json({ error: 'Identifiants invalides ou compte désactivé.' });
+    }
+    const roleMatches = requestedRole === 'personnel'
+      ? user.role === 'PERSONNEL'
+      : user.role === 'ADMIN' || user.role === 'SUPER_ADMIN';
+    if (!roleMatches) {
+      return res.status(403).json({
+        error: requestedRole === 'admin'
+          ? 'Ce compte est réservé au personnel. Utilisez la connexion du personnel.'
+          : 'Ce compte est réservé aux administrateurs. Utilisez la connexion administrateur.',
+      });
     }
 
     const token = jwt.sign({}, secret, { subject: user.id, expiresIn: '8h' });

@@ -24,6 +24,7 @@ psql -U postgres -d hospital_stats -f database/schema.sql
 
 ## 3. Tables créées
 
+- **users** : comptes de connexion du personnel et des administrateurs, avec leurs rôles et leur état d'activation.
 - **accouchements** : enregistrements du formulaire d'accouchement (mère, bébé, responsables).
 - **rapports** : rapports statistiques générés (imports de fichiers CSV/Excel).
 
@@ -37,3 +38,19 @@ Exemple pour l'environnement (fichier `server/.env`) :
 DATABASE_URL=postgresql://postgres:VotreMotDePasse@localhost:5432/hospital_stats
 PORT=3001
 ```
+
+## 5. Créer le compte de connexion initial
+
+Après l'application de `schema.sql`, synchroniser Prisma puis créer le compte
+super-administrateur avec les variables `ADMIN_NAME`, `ADMIN_EMAIL` et
+`ADMIN_PASSWORD` définies dans `server/.env` :
+
+```powershell
+cd server
+npm run db:generate
+npm run db:push
+npm run db:seed
+```
+
+Le mot de passe n'est jamais enregistré en clair : le script de seed le
+transforme en hash bcrypt avant de l'insérer dans `users.password_hash`.

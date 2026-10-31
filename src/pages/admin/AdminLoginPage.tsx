@@ -7,21 +7,34 @@ export function AdminLoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const accessRole = searchParams.get('role') === 'personnel' ? 'personnel' : 'admin';
+  const isPersonnelAccess = accessRole === 'personnel';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   if (loading) return <div className="p-10 text-center text-slate-500">Vérification de la session…</div>;
-  if (user) return <Navigate to={user.role === 'PERSONNEL' ? '/personnel' : '/admin'} replace />;
+  if (user) {
+    const hasMatchingRole = isPersonnelAccess ? user.role === 'PERSONNEL' : user.role !== 'PERSONNEL';
+    if (hasMatchingRole) {
+      return <Navigate to={isPersonnelAccess ? '/personnel' : '/admin'} replace />;
+    }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitting(true);
     setError('');
     try {
-      const sessionUser = await login(email, password);
-      navigate(sessionUser.role === 'PERSONNEL' ? '/personnel' : '/admin', { replace: true });
+      const sessionUser = await login(email, password, accessRole);
+      const hasMatchingRole = isPersonnelAccess ? sessionUser.role === 'PERSONNEL' : sessionUser.role !== 'PERSONNEL';
+      if (!hasMatchingRole) {
+        setError(isPersonnelAccess
+          ? 'Ce compte est réservé aux administrateurs. Utilisez la connexion administrateur.'
+          : 'Ce compte est réservé au personnel. Utilisez la connexion du personnel.');
+        return;
+      }
+      navigate(isPersonnelAccess ? '/personnel' : '/admin', { replace: true });
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : 'Connexion impossible.');
     } finally {

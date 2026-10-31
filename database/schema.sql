@@ -6,6 +6,36 @@
 -- Puis exécuter ce script : psql -U postgres -d hospital_stats -f database/schema.sql
 -- ============================================================
 
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- ============================================================
+-- Table des utilisateurs (connexion et gestion des rôles)
+-- ============================================================
+-- Le mot de passe est toujours stocké sous forme de hash bcrypt.
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'UserRole') THEN
+    CREATE TYPE "UserRole" AS ENUM ('PERSONNEL', 'ADMIN', 'SUPER_ADMIN');
+  END IF;
+END
+$$;
+
+CREATE TABLE IF NOT EXISTS users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(160) NOT NULL,
+  email VARCHAR(254) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  role "UserRole" NOT NULL DEFAULT 'PERSONNEL',
+  specialty VARCHAR(160),
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_role_active ON users(role, is_active);
+
+COMMENT ON TABLE users IS 'Comptes utilisés pour la connexion et les autorisations';
+
 -- Table des accouchements (données du formulaire)
 CREATE TABLE IF NOT EXISTS accouchements (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

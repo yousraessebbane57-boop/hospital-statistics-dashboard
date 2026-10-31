@@ -33,7 +33,7 @@ export function PersonnelLayout() {
             Espace admin
           </Link>
         )}
-        <button onClick={() => void signOut()} className="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-green-700">
+        <button onClick={() => void signOut()} className="ml-auto rounded-lg bg-green-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-green-700">
           Déconnexion
         </button>
       </header>

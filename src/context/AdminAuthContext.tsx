@@ -6,7 +6,7 @@ import type { AdminSessionUser } from '@/api/admin';
 interface AdminAuthContextValue {
   user: AdminSessionUser | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<AdminSessionUser>;
+  login: (email: string, password: string, accessRole: 'admin' | 'personnel') => Promise<AdminSessionUser>;
   logout: () => Promise<void>;
 }
 
@@ -23,8 +23,8 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const { user: sessionUser } = await adminApi.login(email, password);
+  const login = useCallback(async (email: string, password: string, accessRole: 'admin' | 'personnel') => {
+    const { user: sessionUser } = await adminApi.login(email, password, accessRole);
     setUser(sessionUser);
     return sessionUser;
   }, []);

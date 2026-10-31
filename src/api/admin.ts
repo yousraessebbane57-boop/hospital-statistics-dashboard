@@ -48,8 +48,8 @@ const json = (data: unknown): RequestInit => ({
 });
 
 export const adminApi = {
-  login: (email: string, password: string) =>
-    request<{ user: AdminSessionUser }>('/auth/login', json({ email, password })),
+  login: (email: string, password: string, accessRole: 'admin' | 'personnel') =>
+    request<{ user: AdminSessionUser }>('/auth/login', json({ email, password, accessRole })),
   logout: () => request<void>('/auth/logout', { method: 'POST' }),
   me: () => request<{ user: AdminSessionUser }>('/auth/me'),
   dashboard: () => request<DashboardStats>('/dashboard'),
